@@ -1,7 +1,9 @@
 CC=gcc
 CFLAGS= -Wall
 
-LIBS= -lstdc++
+LIBS= \
+	-lstdc++ \
+	-lgps
 
 # Folders
 SRC=src
@@ -19,7 +21,6 @@ SRC_FILES = \
 	$(SRC)/data/sensorWrappers/GPSWrapper.h
 
 # create output directorie
-#
 
 all: createDirectories bikeComputer
 

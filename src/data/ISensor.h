@@ -11,6 +11,8 @@ class ISensor
 		ISensor(){}
 		virtual ~ISensor(){}
 
+		virtual bool init() = 0;
+
         virtual std::shared_ptr<ISensorData> getData() = 0;
 };
 
