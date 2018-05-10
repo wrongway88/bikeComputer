@@ -2,8 +2,7 @@ CC=gcc
 CFLAGS= -Wall
 
 LIBS= \
-	-lstdc++ \
-	-lgps
+	-lstdc++
 
 # Folders
 SRC=src
@@ -11,14 +10,10 @@ BIN=bin
 OBJ=$(BIN)/obj
 
 #Files
-SRC_FILES = \
+SRC_FILES= \
 	$(SRC)/main.cpp \
-	$(SRC)/data/ISensor.h \
-	$(SRC)/data/ISensorData.h \
 	$(SRC)/data/sensorWrappers/GPSData.cpp \
-	$(SRC)/data/sensorWrappers/GPSData.h \
-	$(SRC)/data/sensorWrappers/GPSWrapper.cpp \
-	$(SRC)/data/sensorWrappers/GPSWrapper.h
+	$(SRC)/data/sensorWrappers/GPSWrapper.cpp
 
 # create output directorie
 
@@ -29,6 +24,6 @@ createDirectories:
 	@mkdir -p $(OBJ)
 
 bikeComputer:
-	$(CC) -o $(BIN)/bikeComputer $(SRC_FILES) $(LIBS)  $(CFLAGS)
+	$(CC) -o $(BIN)/bikeComputer $(SRC)main.cpp $(LIBS)  $(CFLAGS)
 
 clean:
