@@ -1,9 +1,14 @@
 #include <iostream>
 #include <memory>
 
+#include "data/SensorManager.h"
 #include "data/sensorWrappers/GPSWrapper.h"
+#include "data/sensorWrappers/ThermometerWrapper.h"
+
 #include "utility/logging/logging.h"
 #include "utility/logging/ConsoleLogger.h"
+
+SensorManager gSensorManager;
 
 void initLogging();
 void test();
@@ -28,14 +33,35 @@ void initLogging()
 
 void test()
 {
-    LOG_INFO("GPS Test");
+    LOG_INFO("Sensor Test");
 
+    ThermometerWrapper tw;
+    tw.init();
+    std::string dataString = tw.getData()->toString();
+    LOG_INFO(dataString);
+
+
+    /*
+    std::unique_ptr<GPSWrapper> gpsWrapper = std::make_unique<GPSWrapper>();
+
+    while(gpsWrapper->init())
+    {
+        Sleep(100);
+    }
+    */
+
+    // gSensorManager.pushSensor(gpsWrapper);
+
+    // .pu
+
+    /*
     GPSWrapper gps;
     gps.init();
     std::string gpsDataString = gps.getData()->toString();
 
     LOG_INFO(gpsDataString);
+    */
 
-    LOG_INFO("GPS Test done");
+    LOG_INFO("Sensor Test done");
 }
 
