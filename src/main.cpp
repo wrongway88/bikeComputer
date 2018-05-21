@@ -4,6 +4,7 @@
 #include "data/SensorManager.h"
 #include "data/sensorWrappers/GPSWrapper.h"
 #include "data/sensorWrappers/ThermometerWrapper.h"
+#include "data/sensorWrappers/IRWrapper.h"
 
 #include "utility/logging/logging.h"
 #include "utility/logging/ConsoleLogger.h"
@@ -39,6 +40,12 @@ void test()
     tw.init();
     std::string dataString = tw.getData()->toString();
     LOG_INFO(dataString);
+
+
+    IRWrapper irw;
+    irw.init();
+    std::string irString = irw.getData()->toString();
+    LOG_INFO(irString);
 
 
     /*

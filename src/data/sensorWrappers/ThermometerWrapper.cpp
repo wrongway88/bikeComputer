@@ -1,6 +1,7 @@
 #include "ThermometerWrapper.h"
 #include "ThermometerData.h"
 #include "../../utility/logging/logging.h"
+#include "../../utility/python/PythonWrapper.h"
 
 ThermometerWrapper::ThermometerWrapper()
     : m_pyGetTemp(nullptr)
@@ -12,40 +13,40 @@ ThermometerWrapper::ThermometerWrapper()
 
 ThermometerWrapper::~ThermometerWrapper()
 {
-    Py_DECREF(m_pyGetTemp);
-    Py_DECREF(m_pyGetPressure);
-    Py_DECREF(m_pyGetAltitude);
-    Py_DECREF(m_pyGetSeaLevelPressure);
-    Py_Finalize();
+    PythonWrapper* python = PythonWrapper::getInstance();
+    python->releaseItem(m_pyGetTemp);
+    python->releaseItem(m_pyGetPressure);
+    python->releaseItem(m_pyGetAltitude);
+    python->releaseItem(m_pyGetSeaLevelPressure);
 }
 
 bool ThermometerWrapper::init()
 {
-    Py_Initialize();
-
     static const std::string initBMP180 =
         "import Adafruit_BMP.BMP085 as BMP085";
 
     static const std::string getTempFunction =
         "def getTemp():\
-            return sensor.read_temperature();";
+            return tempSensor.read_temperature();";
     static const std::string getPressureFunction =
         "def getPressure():\
-            return sensor.read_pressure();";
+            return tempSensor.read_pressure();";
     static const std::string getAltitudeFunction =
         "def getAltitude():\
-            return sensor.read_altitude();";
+            return tempSensor.read_altitude();";
     static const std::string getSeaLevelPressureFunction =
         "def getSeaLevelPressure():\
-            return sensor.read_sealevel_pressure();";
+            return tempSensor.read_sealevel_pressure();";
 
-    int res = PyRun_SimpleString(initBMP180.c_str());
+    PythonWrapper* python = PythonWrapper::getInstance();
 
-    res = res | PyRun_SimpleString("sensor = BMP085.BMP085()");
-    res = res | PyRun_SimpleString(getTempFunction.c_str());
-    res = res | PyRun_SimpleString(getPressureFunction.c_str());
-    res = res | PyRun_SimpleString(getAltitudeFunction.c_str());
-    res = res | PyRun_SimpleString(getSeaLevelPressureFunction.c_str());
+    int res = python->runString(initBMP180);
+
+    res = res | python->runString("tempSensor = BMP085.BMP085()");
+    res = res | python->runString(getTempFunction);
+    res = res | python->runString(getPressureFunction);
+    res = res | python->runString(getAltitudeFunction);
+    res = res | python->runString(getSeaLevelPressureFunction);
 
     if(res != 0)
     {
@@ -53,13 +54,10 @@ bool ThermometerWrapper::init()
         return false;
     }
 
-    PyObject* mainModule = PyImport_AddModule("__main__");
-    PyObject* globalDict = PyModule_GetDict(mainModule);
-
-    m_pyGetTemp = PyDict_GetItemString(globalDict, "getTemp");
-    m_pyGetPressure = PyDict_GetItemString(globalDict, "getPressure");
-    m_pyGetAltitude = PyDict_GetItemString(globalDict, "getAltitude");
-    m_pyGetSeaLevelPressure = PyDict_GetItemString(globalDict, "getSeaLevelPressure");
+    m_pyGetTemp = python->getItem("getTemp");
+    m_pyGetPressure = python->getItem("getPressure");
+    m_pyGetAltitude = python->getItem("getAltitude");
+    m_pyGetSeaLevelPressure = python->getItem("getSeaLevelPressure");
 
     if(m_pyGetTemp == nullptr
         || m_pyGetPressure == nullptr
@@ -70,12 +68,6 @@ bool ThermometerWrapper::init()
 
         return false;
     }
-
-    // PyObject* result =  PyObject_CallObject(expression, nullptr);
-
-    // PyIntObject* intResult = dynamic_cast<PyIntObject*>(result);
-
-    // long resValue = PyInt_AsLong(result);
 
     return true;
 }
@@ -94,56 +86,47 @@ std::shared_ptr<ISensorData> ThermometerWrapper::getData()
 
 float ThermometerWrapper::getTemperature()
 {
-    if(m_pyGetTemp == nullptr)
+    float result = 0.0f;
+    if(PythonWrapper::getInstance()->callFunctionObject(m_pyGetTemp, result) == false)
     {
-        LOG_ERROR("Python function not initialized.");
-        return 0.0f;
+        LOG_ERROR("Failed to read temperature");
     }
 
-    PyObject* result =  PyObject_CallObject(m_pyGetTemp, nullptr);
-    return PyFloat_AsDouble(result);
+    return result;
 }
 
 float ThermometerWrapper::getPressure()
 {
-    if(m_pyGetPressure == nullptr)
+    float result = 0.0f;
+    if(PythonWrapper::getInstance()->callFunctionObject(m_pyGetPressure, result) == false)
     {
-        LOG_ERROR("Python function not initialized.");
-        return 0.0f;
+        LOG_ERROR("Failed to read air pressure");
     }
 
-    PyObject* result =  PyObject_CallObject(m_pyGetPressure, nullptr);
-    return PyFloat_AsDouble(result);
+    return result;
 }
 
 float ThermometerWrapper::getAltitude(float seaLevelPressure)
 {
-    if(m_pyGetAltitude == nullptr)
+    // TODO: pass argument
+
+    float result = 0.0f;
+    if(PythonWrapper::getInstance()->callFunctionObject(m_pyGetAltitude, result) == false)
     {
-        LOG_ERROR("Python function not initialized.");
-        return 0.0f;
+        LOG_ERROR("Failed to read altitude");
     }
 
-    PyObject* args = PyTuple_New(1);
-    PyTuple_SetItem(args, 0, PyFloat_FromDouble(seaLevelPressure));
-
-    // TODO: pass argument
-    PyObject* result =  PyObject_CallObject(m_pyGetAltitude, nullptr);
-    return PyFloat_AsDouble(result);
+    return result;
 }
 
 float ThermometerWrapper::getSeaLevelPressure(float altitude)
 {
-    if(m_pyGetSeaLevelPressure == nullptr)
+    // TODO: pass argument
+    float result = 0.0f;
+    if(PythonWrapper::getInstance()->callFunctionObject(m_pyGetSeaLevelPressure, result) == false)
     {
-        LOG_ERROR("Python function not initialized.");
-        return 0.0f;
+        LOG_ERROR("Failed to read sea level pressure");
     }
 
-    PyObject* args = PyTuple_New(1);
-    PyTuple_SetItem(args, 0, PyFloat_FromDouble(altitude));
-
-    // TODO: pass argument
-    PyObject* result =  PyObject_CallObject(m_pyGetSeaLevelPressure, nullptr);
-    return PyFloat_AsDouble(result);
+    return result;
 }
