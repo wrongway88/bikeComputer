@@ -5,13 +5,24 @@
 #include "data/sensorWrappers/GPSWrapper.h"
 #include "data/sensorWrappers/ThermometerWrapper.h"
 #include "data/sensorWrappers/IRWrapper.h"
+#include "data/sensorWrappers/HallSensorWrapper.h"
 
 #include "utility/logging/logging.h"
 #include "utility/logging/ConsoleLogger.h"
 
+#include "view/TestView.h"
+
+#include <FL/Fl.H>
+
+#include "python2.7/Python.h"
+
 SensorManager gSensorManager;
 
 void initLogging();
+
+void setupSensors();
+void updateSensors();
+
 void test();
 
 int main()
@@ -20,9 +31,25 @@ int main()
 
     LOG_INFO("Bike Computer");
 
-	test();
+    setupSensors();
 
-	return 0;
+    Py_BEGIN_ALLOW_THREADS
+
+    while(true)
+    {
+        updateSensors();
+    }
+
+    gSensorManager.stopSensorUpdates();
+
+    Py_END_ALLOW_THREADS
+
+	// test();
+
+	// TestView testView;
+	// testView.openTestWindow();
+
+	return Fl::run();
 }
 
 void initLogging()
@@ -32,10 +59,51 @@ void initLogging()
     LogManager::getInstance()->addLogger(consoleLogger);
 }
 
+void setupSensors()
+{
+    LOG_INFO("Sensor setup");
+
+    std::unique_ptr<ThermometerWrapper> thermometer = std::make_unique<ThermometerWrapper>();
+    thermometer->init();
+    gSensorManager.pushSensor(std::move(thermometer));
+
+    std::unique_ptr<GPSWrapper> gps = std::make_unique<GPSWrapper>();
+    while(gps->init() == false)
+    {
+        sleep(100);
+    }
+    gSensorManager.pushSensor(std::move(gps));
+
+    std::unique_ptr<IRWrapper> irSensor = std::make_unique<IRWrapper>();
+    irSensor->init();
+    gSensorManager.pushSensor(std::move(irSensor));
+
+    LOG_INFO("Sensors ready");
+
+    gSensorManager.startSensorUpdates();
+}
+
+void updateSensors()
+{
+    auto data = gSensorManager.getCurrentSensorData();
+
+    // LOG_INFO_STREAM(<< data.size() << " data points");
+
+    for(auto d : data)
+    {
+        LOG_INFO(d->toString());
+    }
+}
+
 void test()
 {
     LOG_INFO("Sensor Test");
 
+    HallSensorWrapper hallWrapper;
+    hallWrapper.init();
+    hallWrapper.getData();
+
+    /*
     ThermometerWrapper tw;
     tw.init();
     std::string dataString = tw.getData()->toString();
@@ -46,6 +114,17 @@ void test()
     irw.init();
     std::string irString = irw.getData()->toString();
     LOG_INFO(irString);
+    */
+
+
+    /*
+    GPSWrapper gpsw;
+    while(gpsw.init() == false)
+    {
+    }
+    std::string gpsString = gpsw.getData()->toString();
+    LOG_INFO(gpsString);
+    */
 
 
     /*
@@ -71,4 +150,3 @@ void test()
 
     LOG_INFO("Sensor Test done");
 }
-

@@ -44,14 +44,25 @@ void PythonWrapper::releaseItem(PyObject* item)
 
 bool PythonWrapper::callFunctionObject(PyObject* function, float& result)
 {
+    PyGILState_STATE gilState = PyGILState_Ensure();
+
     if(function == nullptr)
     {
         LOG_ERROR("Python function not initialized.");
         return false;
     }
 
-    PyObject* resultObject =  PyObject_CallObject(function, nullptr);
-    result = PyFloat_AsDouble(resultObject);
+    try
+    {
+        PyObject* resultObject =  PyObject_CallObject(function, nullptr);
+        result = PyFloat_AsDouble(resultObject);
+    }
+    catch(std::exception& exception)
+    {
+        LOG_ERROR_STREAM(<< "Failed to call callable pyObject: " << exception.what() );
+    }
+
+    PyGILState_Release(gilState);
 
     return true;
 }

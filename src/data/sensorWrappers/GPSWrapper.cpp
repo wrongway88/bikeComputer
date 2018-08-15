@@ -2,6 +2,8 @@
 
 #include "GPSData.h"
 
+#include <unistd.h>
+
 #include "../../utility/logging/logging.h"
 
 GPSWrapper::GPSWrapper()
@@ -22,10 +24,12 @@ bool GPSWrapper::init()
 
     result = system("sudo gpsd /dev/ttyAMA0 -F/var/run/gpsd.sock");
 
-    if(m_gpsRecorder.stream(WATCH_ENABLE | WATCH_JSON) == nullptr)
+    while(m_gpsRecorder.stream(WATCH_ENABLE | WATCH_JSON) == nullptr)
     {
-        LOG_ERROR("GPS initialization failed");
-        return false;
+        // LOG_ERROR("GPS initialization failed");
+        // return false;
+
+        usleep(10);
     }
 
     LOG_INFO("GPS initialized");
@@ -55,7 +59,10 @@ std::shared_ptr<ISensorData> GPSWrapper::getData()
         while(((gpsData = m_gpsRecorder.read()) == nullptr)
             || (gpsData->fix.mode < 1))
         {
-            // just wait I guess?
+            if(gpsData != nullptr)
+            {
+                LOG_INFO_STREAM(<< "Fix mode: " << gpsData->fix.mode);
+            }
         }
 
         timestamp_t timeStamp = gpsData->fix.time;

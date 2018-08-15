@@ -86,6 +86,9 @@ std::shared_ptr<ISensorData> ThermometerWrapper::getData()
 
 float ThermometerWrapper::getTemperature()
 {
+    PythonWrapper* python = PythonWrapper::getInstance();
+    m_pyGetTemp = python->getItem("getTemp");
+
     float result = 0.0f;
     if(PythonWrapper::getInstance()->callFunctionObject(m_pyGetTemp, result) == false)
     {
@@ -97,6 +100,9 @@ float ThermometerWrapper::getTemperature()
 
 float ThermometerWrapper::getPressure()
 {
+    PythonWrapper* python = PythonWrapper::getInstance();
+    m_pyGetPressure = python->getItem("getPressure");
+
     float result = 0.0f;
     if(PythonWrapper::getInstance()->callFunctionObject(m_pyGetPressure, result) == false)
     {
@@ -109,6 +115,8 @@ float ThermometerWrapper::getPressure()
 float ThermometerWrapper::getAltitude(float seaLevelPressure)
 {
     // TODO: pass argument
+    PythonWrapper* python = PythonWrapper::getInstance();
+    m_pyGetAltitude = python->getItem("getAltitude");
 
     float result = 0.0f;
     if(PythonWrapper::getInstance()->callFunctionObject(m_pyGetAltitude, result) == false)
@@ -122,6 +130,9 @@ float ThermometerWrapper::getAltitude(float seaLevelPressure)
 float ThermometerWrapper::getSeaLevelPressure(float altitude)
 {
     // TODO: pass argument
+    PythonWrapper* python = PythonWrapper::getInstance();
+    m_pyGetSeaLevelPressure = python->getItem("getSeaLevelPressure");
+
     float result = 0.0f;
     if(PythonWrapper::getInstance()->callFunctionObject(m_pyGetSeaLevelPressure, result) == false)
     {
