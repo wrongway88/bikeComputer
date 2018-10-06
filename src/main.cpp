@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <mutex>
 
 #include "data/SensorManager.h"
 #include "data/sensorWrappers/GPSWrapper.h"
@@ -10,9 +11,7 @@
 #include "utility/logging/logging.h"
 #include "utility/logging/ConsoleLogger.h"
 
-#include "view/TestView.h"
-
-#include <FL/Fl.H>
+#include "view/GUIManager.h"
 
 #include "python2.7/Python.h"
 
@@ -20,10 +19,19 @@ SensorManager gSensorManager;
 
 void initLogging();
 
+void sensorThreadFunction();
+
 void setupSensors();
 void updateSensors();
 
 void test();
+
+bool gRunSensorUpdates;
+
+std::vector<std::shared_ptr<ISensorData>> gCurrentData;
+std::mutex gSensorDataMutex;
+
+GUIManager guiManager;
 
 int main()
 {
@@ -31,25 +39,16 @@ int main()
 
     LOG_INFO("Bike Computer");
 
-    setupSensors();
+    gRunSensorUpdates = true;
 
-    Py_BEGIN_ALLOW_THREADS
+    std::thread sensorThread(sensorThreadFunction);
 
-    while(true)
-    {
-        updateSensors();
-    }
+    // GUIManager guiManager;
+    guiManager.startGUI();
 
-    gSensorManager.stopSensorUpdates();
+    sensorThread.join();
 
-    Py_END_ALLOW_THREADS
-
-	// test();
-
-	// TestView testView;
-	// testView.openTestWindow();
-
-	return Fl::run();
+    return 0;
 }
 
 void initLogging()
@@ -57,6 +56,22 @@ void initLogging()
     std::shared_ptr<ConsoleLogger> consoleLogger = std::make_shared<ConsoleLogger>();
     consoleLogger->setLogLevel(Logger::LogLevel::LOG_ALL);
     LogManager::getInstance()->addLogger(consoleLogger);
+}
+
+void sensorThreadFunction()
+{
+    setupSensors();
+
+    Py_BEGIN_ALLOW_THREADS
+
+    while(gRunSensorUpdates)
+    {
+        updateSensors();
+    }
+
+    gSensorManager.stopSensorUpdates();
+
+    Py_END_ALLOW_THREADS
 }
 
 void setupSensors()
@@ -85,13 +100,19 @@ void setupSensors()
 
 void updateSensors()
 {
-    auto data = gSensorManager.getCurrentSensorData();
-
-    // LOG_INFO_STREAM(<< data.size() << " data points");
+    std::vector<std::shared_ptr<ISensorData>> data = gSensorManager.getCurrentSensorData();
 
     for(auto d : data)
     {
         LOG_INFO(d->toString());
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(gSensorDataMutex);
+
+        gCurrentData = data;
+
+        guiManager.updateSensorData(gCurrentData);
     }
 }
 
@@ -102,51 +123,6 @@ void test()
     HallSensorWrapper hallWrapper;
     hallWrapper.init();
     hallWrapper.getData();
-
-    /*
-    ThermometerWrapper tw;
-    tw.init();
-    std::string dataString = tw.getData()->toString();
-    LOG_INFO(dataString);
-
-
-    IRWrapper irw;
-    irw.init();
-    std::string irString = irw.getData()->toString();
-    LOG_INFO(irString);
-    */
-
-
-    /*
-    GPSWrapper gpsw;
-    while(gpsw.init() == false)
-    {
-    }
-    std::string gpsString = gpsw.getData()->toString();
-    LOG_INFO(gpsString);
-    */
-
-
-    /*
-    std::unique_ptr<GPSWrapper> gpsWrapper = std::make_unique<GPSWrapper>();
-
-    while(gpsWrapper->init())
-    {
-        Sleep(100);
-    }
-    */
-
-    // gSensorManager.pushSensor(gpsWrapper);
-
-    // .pu
-
-    /*
-    GPSWrapper gps;
-    gps.init();
-    std::string gpsDataString = gps.getData()->toString();
-
-    LOG_INFO(gpsDataString);
-    */
 
     LOG_INFO("Sensor Test done");
 }

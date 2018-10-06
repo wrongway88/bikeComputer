@@ -50,6 +50,8 @@ bool IRWrapper::init()
         return false;
     }
 
+    LOG_INFO("IR Sensor initialized");
+
     return true;
 }
 

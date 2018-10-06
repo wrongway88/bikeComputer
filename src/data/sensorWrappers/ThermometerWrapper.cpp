@@ -69,6 +69,8 @@ bool ThermometerWrapper::init()
         return false;
     }
 
+    LOG_INFO("Thermometer/Barometer initialized");
+
     return true;
 }
 
