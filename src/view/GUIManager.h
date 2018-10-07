@@ -1,14 +1,16 @@
 #ifndef GUI_MANAGER_H
 #define GUI_MANAGER_H
 
+#include <memory>
 #include <thread>
+#include <vector>
 
 #include <FL/Fl.H>
 
-#include "TestView.h"
-
 #include <vector>
 #include "../data/ISensor.h"
+
+#include "IView.h"
 
 class GUIManager
 {
@@ -20,7 +22,7 @@ class GUIManager
 
         void updateSensorData(const std::vector<std::shared_ptr<ISensorData>>& sensorData);
     private:
-        TestView m_testView;
+        std::vector<std::shared_ptr<IView>> m_views;
 };
 
 #endif // GUI_MANAGER_H
